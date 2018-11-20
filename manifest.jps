@@ -23,18 +23,18 @@ settings:
       - name: git_url
         caption: Git Project URL
         type: string
-        default: https://gitlab.com/wordpress-cicd/test-project.git
+        default: gitlab.com/wordpress-cicd/test-project.git
         required: true
       - name: git_user
         caption: Git User
         type: string
-        default: site
+        default: test
         required: true
       - name: git_token
         caption: Git Access Token
         type: string
         inputType: password
-        default: JC2CCFdQiLs5GnGu27KF
+        default: n2eXHdPQNh14_fT15357
         required: true
       - name: git_branch
         caption: Git Branch
