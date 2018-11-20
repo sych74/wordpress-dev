@@ -12,8 +12,8 @@ description: WordPress is web software you can use to create a beautiful website
 baseUrl: https://gitlab.com/templates-1/wordpress-jelastic/raw/master/wordpress
 
 globals:
-  DB_USER: admin
-  DB_PASS: 12345
+  DB_USER: site
+  DB_PASS: abcABC123
   LOG: /tmp/git.log
 
 settings:
@@ -86,17 +86,10 @@ addons:
             default: yes
 
 onInstall:
-  - cmd[sqldb]: |-
-      wget https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master/scripts/setupUser.sh -O ~/setupUser.sh &>> /var/log/run.log
-      bash ~/setupUser.sh ${globals.DB_USER} ${globals.DB_PASS} &>> /var/log/run.log
-      mysql -u${globals.DB_USER} -p${globals.DB_PASS} -e "CREATE DATABASE IF NOT EXISTS wordpress;"
-    user: root
-
-  - cmd[nginxphp]: curl -fsSL 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar' -o /usr/local/bin/wp && chmod +x /usr/local/bin/wp
-    user: root
 
   - gitClone
   - setubDB
+  - setupWP
 
 actions:
   gitClone:
@@ -106,7 +99,13 @@ actions:
   setubDB:
     cmd[nginxphp]: |-
       cat /var/www/webroot/ROOT/wp-content/plugins/revisr/revisr-backups/*.sql | mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress 2>&1
-  
+
+  setupWP:
+    cmd[nginxphp]: |-
+      cp /var/www/webroot/ROOT/wp-config.php.template /var/www/webroot/ROOT/wp-config.php
+      cp /var/www/webroot/ROOT/wp-jelastic.php.template /var/www/webroot/ROOT/wp-jelastic.php
+      sed -i "s/_HOST_/${env.domain}/g" /var/www/webroot/ROOT/wp-config.php
+      mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress -e "update wp_blogs set domain = '${env.domain}';"  
   reset-content:
     - cmd[nginxphp]: |-
         cd /var/www/webroot/ROOT/
