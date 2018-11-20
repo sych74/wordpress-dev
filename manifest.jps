@@ -17,9 +17,8 @@ globals:
   LOG: /tmp/git.log
 
 settings:
+  main:  
     fields:
-      - "--": "---- Git Credentials ----"
-
       - name: git_url
         caption: Git Project URL
         type: string
@@ -41,7 +40,23 @@ settings:
         type: string
         default: master
         required: true
+  gitaddon:
+    fields:
+      - name: git_commit
+        caption: Git Message
+        type: string
+        default: Git Message
+        required: true
+            
+      - name: mode
+        caption: Database backup
+        type: radio-fieldset
+        values:
+          db_yes: Yes
+          db_no: No
+        default: yes
 
+  
 ssl: false
 nodes:
   - nodeType: nginxphp
@@ -61,46 +76,16 @@ addons:
     name: Wordpress Git Addon
     buttons:
       - procedure: commitChanges
+        settings: gitaddon
         caption: Commit Changes
         logsPath: "${globals.LOG}"
         successText: Cachges are successfully commited.
-        settings:
-          fields:
-            - name: git_commit
-              caption: Git Message
-              type: string
-              default: Git Message
-              required: true
-            
-            - name: mode
-              caption: Database backup
-              type: radio-fieldset
-              values:
-                db_yes: Yes
-                db_no: No
-              default: yes
-
       - procedure: pushChanges
         caption: Push Changes
         logsPath: "${globals.LOG}"
         submitButtonText: Apply
         successText: Cachges are successfully pushed.
-    settings:
-        fields:
-          - name: git_commit
-            caption: Git Message
-            type: string
-            default: Git Message
-            required: true
-            
-          - name: mode
-            caption: Database backup
-            type: radio-fieldset
-            values:
-              db_yes: Yes
-              db_no: No
-            default: yes
-
+        
 onInstall:
 
   - cmd[sqldb]: |-
