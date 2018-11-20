@@ -64,6 +64,22 @@ addons:
         caption: Commit Changes
         logsPath: "${globals.LOG}"
         successText: Cachges are successfully commited.
+        settings:
+          fields:
+            - name: git_commit
+              caption: Git Message
+              type: string
+              default: Git Message
+              required: true
+            
+            - name: mode
+              caption: Database backup
+              type: radio-fieldset
+              values:
+                db_yes: Yes
+                db_no: No
+              default: yes
+
       - procedure: pushChanges
         caption: Push Changes
         logsPath: "${globals.LOG}"
@@ -87,6 +103,15 @@ addons:
 
 onInstall:
 
+  - cmd[sqldb]: |-
+      wget https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master/scripts/setupUser.sh -O ~/setupUser.sh &>> /var/log/run.log
+      bash ~/setupUser.sh ${globals.DB_USER} ${globals.DB_PASS} &>> /var/log/run.log
+      mysql -u${globals.DB_USER} -p${globals.DB_PASS} -e "CREATE DATABASE IF NOT EXISTS wordpress;"
+    user: root
+
+  - cmd[nginxphp]: curl -fsSL 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar' -o /usr/local/bin/wp && chmod +x /usr/local/bin/wp
+    user: root
+
   - gitClone
   - setubDB
   - setupWP
@@ -98,7 +123,7 @@ actions:
       git clone -b ${settings.git_branch} --single-branch https://${settings.git_user}:${settings.git_token}@${settings.git_url} /var/www/webroot/ROOT
   setubDB:
     cmd[nginxphp]: |-
-      cat /var/www/webroot/ROOT/wp-content/plugins/revisr/revisr-backups/*.sql | mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress 2>&1
+      cat /var/www/webroot/ROOT/wp-content/uploads/revisr-backups/*.sql | mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress 2>&1
 
   setupWP:
     cmd[nginxphp]: |-
@@ -115,5 +140,5 @@ actions:
         git pull origin master &>> ${globals.LOG}
         for table in $(ls wp-content/uploads/revisr-backups/ | grep sql); 
           do echo "Table ${table} is reseted"; 
-          mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress < wp-content/plugins/revisr/revisr-backups/$table; done &>> ${globals.LOG}
+          mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress < wp-content/uploads/revisr-backups/$table; done &>> ${globals.LOG}
         chown nginx:nginx -R /var/www/webroot/ROOT/
