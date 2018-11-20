@@ -15,6 +15,8 @@ globals:
   DB_USER: site
   DB_PASS: abcABC123
   LOG: /tmp/git.log
+  BACKUP_DIR: /var/www/webroot/ROOT/wp-content/uploads/revisr-backups
+  GIT_DIR: /var/www/webroot/ROOT
 
 settings:
   main:  
@@ -42,20 +44,19 @@ settings:
         required: true
   gitaddon:
     fields:
-      - name: git_commit
+      - name: git_message
         caption: Git Message
         type: string
         default: Git Message
         required: true
             
-      - name: mode
+      - name: dbbackup
         caption: Database backup
         type: radio-fieldset
         values:
-          db_yes: Yes
-          db_no: No
-        default: yes
-
+          db_yes: With Database Backup
+          db_no: Without Database Backup
+        default: With Database Backup
   
 ssl: false
 nodes:
@@ -104,26 +105,46 @@ onInstall:
 actions:
   gitClone:
     cmd[nginxphp]: |-
-      rm -rf /var/www/webroot/ROOT;
-      git clone -b ${settings.git_branch} --single-branch https://${settings.git_user}:${settings.git_token}@${settings.git_url} /var/www/webroot/ROOT
+      rm -rf ${globals.GIT_DIR};
+      git clone -b ${settings.git_branch} --single-branch https://${settings.git_user}:${settings.git_token}@${settings.git_url} ${globals.GIT_DIR}
   setubDB:
     cmd[nginxphp]: |-
-      cat /var/www/webroot/ROOT/wp-content/uploads/revisr-backups/*.sql | mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress 2>&1
+      cat ${globals.BACKUP_DIR}/*.sql | mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress 2>&1
 
   setupWP:
     cmd[nginxphp]: |-
-      cp /var/www/webroot/ROOT/wp-config.php.template /var/www/webroot/ROOT/wp-config.php
-      cp /var/www/webroot/ROOT/wp-jelastic.php.template /var/www/webroot/ROOT/wp-jelastic.php
-      sed -i "s/_HOST_/${env.domain}/g" /var/www/webroot/ROOT/wp-config.php
+      cp ${globals.GIT_DIR}/wp-config.php.template ${globals.GIT_DIR}/wp-config.php
+      cp ${globals.GIT_DIR}/wp-jelastic.php.template ${globals.GIT_DIR}/wp-jelastic.php
+      sed -i "s/_HOST_/${env.domain}/g" ${globals.GIT_DIR}/wp-config.php
       mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress -e "update wp_blogs set domain = '${env.domain}';"  
   reset-content:
     - cmd[nginxphp]: |-
-        cd /var/www/webroot/ROOT/
+        cd ${globals.GIT_DIR}
         date &>> ${globals.LOG}
         git fetch &>> ${globals.LOG}
-        git reset --hard origin/master &>> ${globals.LOG}
-        git pull origin master &>> ${globals.LOG}
-        for table in $(ls wp-content/uploads/revisr-backups/ | grep sql); 
+        git reset --hard origin/${settings.git_branch} &>> ${globals.LOG}
+        git pull origin ${settings.git_branch} &>> ${globals.LOG}
+        for table in $(ls ${globals.BACKUP_DIR} | grep sql); 
           do echo "Table ${table} is reseted"; 
-          mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress < wp-content/uploads/revisr-backups/$table; done &>> ${globals.LOG}
-        chown nginx:nginx -R /var/www/webroot/ROOT/
+          mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress < ${globals.BACKUP_DIR}/$table; done &>> ${globals.LOG}
+        chown nginx:nginx -R ${globals.GIT_DIR}
+        
+  commitChanges:
+    - if ('${settings.dbbackup}' == 'db_yes'):
+        cmd[nginxphp]: |-
+          for tables in `mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 -N -B -e 'show tables from wordpress'`; do \
+            echo $tables; mysqldump -u${globals.DB_USER} -p${globals.DB_PASS} wordpress $tables > ${globals.BACKUP_DIR}/revisr_$tables; done
+          cd ${globals.GIT_DIR}
+          date &>> ${globals.LOG}
+          git add .; git commit -am "${settings.git_message} &>> ${globals.LOG}"
+        
+    - if ('${settings.dbbackup}' == 'db_no'):
+         cmd[nginxphp]: |-
+          cd ${globals.GIT_DIR}
+          date &>> ${globals.LOG}
+          git add .; git commit -am "${settings.git_message} &>> ${globals.LOG}"
+    
+  pushChanges:
+    cd ${globals.GIT_DIR}
+    date &>> ${globals.LOG}
+    git push origin ${settings.git_branch} &>> ${globals.LOG}"
