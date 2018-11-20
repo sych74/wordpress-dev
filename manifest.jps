@@ -148,3 +148,4 @@ actions:
     cd ${globals.GIT_DIR}
     date &>> ${globals.LOG}
     git push origin ${settings.git_branch} &>> ${globals.LOG}"
+
