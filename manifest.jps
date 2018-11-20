@@ -101,8 +101,8 @@ onInstall:
 actions:
   gitClone:
     cmd[nginxphp]: |-
-      export host=$(echo "https://test/test.git" | sed -e 's|^[^/\/]*//||' -e 's|//.*$||')
-      git clone -b ${settings.git_branch} --single-branch https://${settings.git_user}:${settings.git_token}@${host} /var/www/webroot/ROOT
+      export host=$(echo "${settings.git_url}" | sed -e 's|^[^/\/]*//||' -e 's|//.*$||')
+      rm -rf /var/www/webroot/ROOT; git clone -b ${settings.git_branch} --single-branch https://${settings.git_user}:${settings.git_token}@${host} /var/www/webroot/ROOT
   setubDB:
     cmd[nginxphp]: |-
       cat /var/www/webroot/ROOT/wp-content/revisr-backups/*.sql | mysql -u${settings.DB_USER} -p${settings.DB_PASS} -h${DB_1} wordpress 2>&1
@@ -118,5 +118,3 @@ actions:
           do echo "Table ${table} is reseted"; 
           mysql -u${settings.DB_USER} -p${settings.DB_PASS} -hDB_1 wordpress < wp-content/uploads/revisr-backups/$table; done &>> ${globals.LOG}
         chown nginx:nginx -R /var/www/webroot/ROOT/
-
-
