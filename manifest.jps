@@ -1,7 +1,7 @@
 ---
 jpsType: install
 jpsVersion: '1.1'
-id: wordpress-for-dev
+id: wordpress-dev
 name: Wordpress For Dev
 categories:
   - apps/blogs
