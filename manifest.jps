@@ -1,7 +1,7 @@
 ---
 jpsType: install
 jpsVersion: '1.1'
-id: wordpress-dev
+id: wordpress-custom
 name: Wordpress For Dev
 categories:
   - apps/blogs
@@ -118,7 +118,8 @@ actions:
       cp ${globals.GIT_DIR}/wp-jelastic.php.template ${globals.GIT_DIR}/wp-jelastic.php
       sed -i "s/_HOST_/${env.domain}/g" ${globals.GIT_DIR}/wp-config.php
       wget https://raw.githubusercontent.com/sych74/wordpress-dev/master/scripts/changeDomainON.sh -O ${globals.GIT_DIR}/changeDomainON.sh
-      bash ~/changeDomainON.sh ${env.protocol}://${env.domain}
+      bash ${globals.GIT_DIR}/changeDomainON.sh ${env.protocol}://${env.domain}
+      mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress -e "update wp_blogs set domain = '${env.domain}';"
   reset-content:
     - cmd[nginxphp]: |-
         cd ${globals.GIT_DIR}
@@ -150,4 +151,3 @@ actions:
     cd ${globals.GIT_DIR}
     date &>> ${globals.LOG}
     git push origin ${settings.git_branch} &>> ${globals.LOG}"
-
