@@ -105,7 +105,7 @@ onInstall:
 actions:
   gitClone:
     cmd[nginxphp]: |-
-      wget ${baseURL}/scripts/cloneSITE.sh -O ~/cloneSITE.sh
+      wget https://raw.githubusercontent.com/sych74/wordpress-dev/master/scripts/cloneSITE.sh -O ~/cloneSITE.sh
       bash ~/cloneSITE.sh ${settings.git_url} ${settings.git_user} ${settings.git_token} ${settings.git_branch}
 
   setubDB:
@@ -149,4 +149,3 @@ actions:
     cd ${globals.GIT_DIR}
     date &>> ${globals.LOG}
     git push origin ${settings.git_branch} &>> ${globals.LOG}"
-
