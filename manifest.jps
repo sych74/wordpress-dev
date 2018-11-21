@@ -9,7 +9,7 @@ categories:
 logo: https://gitlab.com/templates-1/wordpress-jelastic/raw/master/images/wp.png
 homepage: http://wordpress.org/
 description: WordPress is web software you can use to create a beautiful website or blog. We like to say that WordPress is both free and priceless at the same time.
-baseUrl: https://gitlab.com/templates-1/wordpress-jelastic/raw/master/wordpress
+baseUrl: https://raw.githubusercontent.com/sych74/wordpress-dev/master
 
 globals:
   DB_USER: site
@@ -24,7 +24,7 @@ settings:
       - name: git_url
         caption: Git Project URL
         type: string
-        default: gitlab.com/wordpress-cicd/test-project.git
+        default: https://gitlab.com/wordpress-cicd/test-project.git
         required: true
       - name: git_user
         caption: Git User
@@ -105,8 +105,9 @@ onInstall:
 actions:
   gitClone:
     cmd[nginxphp]: |-
-      rm -rf ${globals.GIT_DIR};
-      git clone -b ${settings.git_branch} --single-branch https://${settings.git_user}:${settings.git_token}@${settings.git_url} ${globals.GIT_DIR}
+      wget ${baseURL}/scripts/cloneSITE.sh -O ~/cloneSITE.sh
+      bash ~/cloneSITE.sh ${settings.git_url} ${settings.git_user} ${settings.git_token} ${settings.git_branch}
+
   setubDB:
     cmd[nginxphp]: |-
       cat ${globals.BACKUP_DIR}/*.sql | mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress 2>&1
