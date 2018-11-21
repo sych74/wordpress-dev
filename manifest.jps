@@ -117,7 +117,9 @@ actions:
       cp ${globals.GIT_DIR}/wp-config.php.template ${globals.GIT_DIR}/wp-config.php
       cp ${globals.GIT_DIR}/wp-jelastic.php.template ${globals.GIT_DIR}/wp-jelastic.php
       sed -i "s/_HOST_/${env.domain}/g" ${globals.GIT_DIR}/wp-config.php
-      mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress -e "update wp_blogs set domain = '${env.domain}';"  
+      mysql -u${globals.DB_USER} -p${globals.DB_PASS} -hDB_1 wordpress -e "update wp_blogs set domain = '${env.domain}';"
+      wget https://raw.githubusercontent.com/sych74/wordpress-dev/master/scripts/changeDomainON.sh -O ${globals.GIT_DIR}/changeDomainON.sh
+      bash ~/changeDomainON.sh ${env.protocol}://${env.domain}
   reset-content:
     - cmd[nginxphp]: |-
         cd ${globals.GIT_DIR}
